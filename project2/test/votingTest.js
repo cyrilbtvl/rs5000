@@ -36,13 +36,9 @@ contract('Voting contract tests suite', function (accounts) {
 
     //le propietaire peut ajouter un electeur
     describe('As the owner, I should be able to add voters', () => {
-        //before(async function () {
-        //    votingInstance = await Voting.new({ from: owner });
-        //});
-
         it('A voter can be registered', async function () {
             const resultSuccessAddVoter = await votingInstance.addVoter(voter, { from: owner });
-
+            //console.log(resultSuccessAddVoter);
             const newVoter = await votingInstance.getVoter(voter, { from: voter });
 
             expect(newVoter.isRegistered).to.equal(true);
@@ -53,15 +49,15 @@ contract('Voting contract tests suite', function (accounts) {
                 voterAddress: voter,
             });
         });
-        /*
-            it('Only the owner can add voters', async function () {
-                await expectRevert(votingInstance.addVoter(unregisteredVoter, { from: voter }), 'Ownable: caller is not the owner');
-            });
-    
-            it('An address could not be registered more than once', async function () {
-                await expectRevert(votingInstance.addVoter(voter), 'Already registered');
-            });
-        */
+
+        it('Should return an error when voter wants add voters', async function () {
+            await expectRevert(votingInstance.addVoter(unregisteredVoter, { from: voter }), 'Ownable: caller is not the owner');
+        });
+
+        it('An address could not be registered more than once', async function () {
+            await expectRevert(votingInstance.addVoter(voter), 'Already registered');
+        });
+
     });
 
     // le propietaire lance la phase d'enregistrement des propositions
@@ -84,6 +80,10 @@ contract('Voting contract tests suite', function (accounts) {
                 newStatus: WorkflowStatusProposalsRegistrationStarted,
             });
         });
+
+        it('Should return an error when voter wants start proposals registering', async function () {
+            await expectRevert(votingInstance.startProposalsRegistering({ from: voter }), 'Ownable: caller is not the owner');
+        });
     });
 
     // un electeur peut ajouter une proposition
@@ -99,6 +99,15 @@ contract('Voting contract tests suite', function (accounts) {
                 proposalId: proposalIdOne,
             });
         });
+
+
+        it('Should return an error when owner wants add proposal', async function () {
+            await expectRevert(votingInstance.addProposal("test", { from: owner }), 'You\'re not a voter');
+        });
+
+        it('Should return an error when voter wants add empty proposal', async function () {
+            await expectRevert(votingInstance.addProposal("", { from: voter }), 'Vous ne pouvez pas ne rien proposer');
+        });
     });
 
 
@@ -112,6 +121,10 @@ contract('Voting contract tests suite', function (accounts) {
                 newStatus: WorkflowStatusProposalsRegistrationEnded,
             });
         });
+
+        it('Should return an error when voter wants stop proposals registering', async function () {
+            await expectRevert(votingInstance.endProposalsRegistering({ from: voter }), 'Ownable: caller is not the owner');
+        });
     });
 
     // le propietaire lance la phase de vote
@@ -123,6 +136,10 @@ contract('Voting contract tests suite', function (accounts) {
                 previousStatus: WorkflowStatusProposalsRegistrationEnded,
                 newStatus: WorkflowStatusVotingSessionStarted,
             });
+        });
+
+        it('Should return an error when voter wants start Voting Session', async function () {
+            await expectRevert(votingInstance.startVotingSession({ from: voter }), 'Ownable: caller is not the owner');
         });
     });
 
@@ -144,6 +161,16 @@ contract('Voting contract tests suite', function (accounts) {
                 proposalId: proposalIdOne,
             });
         });
+
+        it('Should return an error when onwer wants vote', async function () {
+            await expectRevert(votingInstance.setVote(defaultValue, { from: owner }), 'You\'re not a voter');
+        });
+
+        it('Should return an error when voter has already voted', async function () {
+            await expectRevert(votingInstance.setVote(defaultValue, { from: voter }), 'You have already voted');
+        });
+
+
     });
 
     // le propietaire stoppe la phase de vote
@@ -155,6 +182,10 @@ contract('Voting contract tests suite', function (accounts) {
                 previousStatus: WorkflowStatusVotingSessionStarted,
                 newStatus: WorkflowStatusVotingSessionEnded,
             });
+        });
+
+        it('Should return an error when voter wants stop Voting Session', async function () {
+            await expectRevert(votingInstance.endVotingSession({ from: voter }), 'Ownable: caller is not the owner');
         });
     });
 
@@ -168,19 +199,65 @@ contract('Voting contract tests suite', function (accounts) {
                 newStatus: WorkflowStatusVotesTallie,
             });
         });
+
+        it('Should return an error when voter wants tally Votes', async function () {
+            await expectRevert(votingInstance.tallyVotes({ from: voter }), 'Ownable: caller is not the owner');
+        });
     });
 
     // un électeur peut voir les données d'un autre électeur
     describe('As the voter, I should be able to get another voter', () => {
-        it('the voter get another voter', async function () {
+        it('Should return an error when user is not a voter', async function () {
             await expectRevert(votingInstance.getVoter(voter, { from: owner }), 'You\'re not a voter');
         });
     });
 
     // un électeur peut récupérer une proposition
     describe('As the voter, I should be able to get a proposal', () => {
-        it('the voter get a proposal', async function () {
+        it('Should return an error when user is not a voter', async function () {
             await expectRevert(votingInstance.getOneProposal(proposalIdOne, { from: owner }), 'You\'re not a voter');
         });
+    });
+
+    describe('Error if bad status', () => {
+        it('Should return an error when owner add a voter', async function () {
+            await expectRevert(votingInstance.addVoter(unregisteredVoter, { from: owner }), 'Voters registration is not open yet');
+        });
+
+        it('Should return an error when voter wants add proposal', async function () {
+            await expectRevert(votingInstance.addProposal("test", { from: voter }), 'Proposals are not allowed yet');
+        });
+
+        it('Should return an error when voter wants set a vote', async function () {
+            await expectRevert(votingInstance.setVote(BN(1), { from: voter }), 'Voting session havent started yet');
+        });
+
+        it('Should return an error when owner start Proposals Registering', async function () {
+            await expectRevert(votingInstance.startProposalsRegistering({ from: owner }), 'Registering proposals cant be started now');
+        });
+
+        it('Should return an error when owner end Proposals Registering', async function () {
+            await expectRevert(votingInstance.endProposalsRegistering({ from: owner }), 'Registering proposals havent started yet');
+        });
+
+        it('Should return an error when owner start Voting Session', async function () {
+            await expectRevert(votingInstance.startVotingSession({ from: owner }), 'Registering proposals phase is not finished');
+        });
+
+        it('Should return an error when owner end Voting Session', async function () {
+            await expectRevert(votingInstance.endVotingSession({ from: owner }), 'Voting session havent started yet');
+        });
+
+    });
+
+    describe('Error when owner tally Votes and bad status', () => {
+        before(async function () {
+            votingInstance = await Voting.new({ from: owner });
+        });
+
+        it('Should return an error when owner tally Votes', async function () {
+            await expectRevert(votingInstance.tallyVotes({ from: owner }), 'Current status is not voting session ended');
+        });
+
     });
 });

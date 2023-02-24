@@ -63,8 +63,6 @@ contract('Voting contract tests suite', function (accounts) {
     // le propietaire lance la phase d'enregistrement des propositions
     describe('As the owner, I should be able to start proposals registering', () => {
         before(async function () {
-            //votingInstance = await Voting.new({ from: owner });
-            //await votingInstance.addVoter(voter, { from: owner });
             await votingInstance.addVoter(anotherVoter, { from: owner });
         });
 
@@ -170,7 +168,9 @@ contract('Voting contract tests suite', function (accounts) {
             await expectRevert(votingInstance.setVote(defaultValue, { from: voter }), 'You have already voted');
         });
 
-
+        it('Should return an error when onwer vote and proposal not found', async function () {
+            await expectRevert(votingInstance.setVote(4, { from: anotherVoter }), 'Proposal not found');
+        });
     });
 
     // le propietaire stoppe la phase de vote

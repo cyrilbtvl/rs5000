@@ -16,9 +16,9 @@ function Winner() {
         try {
           let allVoterRegistered = await contract.getPastEvents('VoterRegistered', { fromBlock: 0, toBlock: "latest" });
           let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
-          let isVoter = allVoterAddress.includes(accounts[0]);
-          console.log("isVoter ? " + isVoter);
-          if (isVoter) {
+          let isAVoter = allVoterAddress.includes(accounts[0]);
+          console.log("isVoter ? " + isAVoter);
+          if (isAVoter) {
             setIsVoter(true);
             const voterData = await contract.methods.getVoter(accounts[0]).call({ from: accounts[0] });
             console.log("HasVoter ? " + voterData.hasVoted);
@@ -53,9 +53,9 @@ function Winner() {
 
     getVoterData();
     getWinner();
-  }, [accounts, contract, artifact]);
+  }, [accounts, contract, artifact, isVoter]);
 
-  return (proposalWinner !== null) && (
+  return (proposalWinner !== null && isVoter) && (
     <Message color='green' size='massive'>
       The winner is : {proposalWinner.description} with {proposalWinner.voteCount} votes !
     </Message>

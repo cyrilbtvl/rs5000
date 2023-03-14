@@ -16,19 +16,19 @@ function Account() {
     };
     async function getOwner() {
       if (artifact) {
-        console.log("Account : Smartcontract trouvé");
+        console.log("Account : user connected");
         // On check si l'account courant est l'owner du contract
         const owner = await contract.methods.owner().call({ from: accounts[0] });
         accounts[0] === owner ? setIsOwner(true) : setIsOwner(false);
       } else {
-        console.log("Account : Smartcontract non détecté");
+        console.log("Account : user not connected");
         //alert("pas de contract détecté");
       }
     };
 
     async function getVoter() {
       if (artifact) {
-        console.log("VoterPanel : Smartcontract trouvé");
+        console.log("VoterPanel : user connected");
 
         try {
           let allVoterRegistered = await contract.getPastEvents('VoterRegistered', { fromBlock: 0, toBlock: "latest" });
@@ -46,7 +46,7 @@ function Account() {
           console.log(e)
         }
       } else {
-        console.log("VoterPanel : Smartcontract non détecté");
+        console.log("VoterPanel : user not connected");
       }
     }
 
@@ -58,14 +58,7 @@ function Account() {
 
   return (
     !artifact ? (
-      <Message icon color='red'>
-        <Icon name='warning circle' />
-        <Message.Header>Service Indisponible</Message.Header>
-        <Message.List>
-          <Message.Item>Merci de redéployer votre contrat sur la bonne blockchain.</Message.Item>
-          <Message.Item>Vous êtes connecté avec l'adresse : {account}</Message.Item>
-        </Message.List>
-      </Message>
+      <Message icon='user times' color='red' header='Dear user' content="You are not connected" />
     ) :
       isOwner ? (
         <Message icon='user secret' color='blue' header='Dear owner, you are connected with this address' content={account} />
@@ -74,7 +67,7 @@ function Account() {
           <Message icon='user' color='green' header='Dear voter, you are connected with this address' content={account} />
         ) : (
           <Message icon color='orange'>
-            <Icon name='user times' />
+            <Icon name='user outline' />
             <Message.List>
               <Message.Item>Dear user, you are not a voter.</Message.Item>
               <Message.Item>You are connected with this address : {account}</Message.Item>

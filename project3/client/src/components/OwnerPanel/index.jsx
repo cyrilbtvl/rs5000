@@ -6,6 +6,8 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
   const { state: { accounts, contract, artifact }, } = useEth();
   const [isOwner, setIsOwner] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [EventValue, setEventValue] = useState("");
+  const [countVoters, setCountVoters] = useState(0);
 
   useEffect(() => {
     async function getOwner() {
@@ -25,10 +27,36 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
       }
     }
 
+    async function getEvents() {
+
+      if (artifact) {
+        await contract.events.WorkflowStatusChange({ fromBlock: "earliest" })
+          .on('data', event => {
+            let newStatus = event.returnValues.newStatus;
+            console.log("newStatus : " + newStatus);
+            setEventValue(newStatus);
+          })
+          .on('changed', changed => console.log(changed))
+          .on('error', err => console.log(err))
+          .on('connected', str => console.log(str))
+
+        await contract.events.VoterRegistered({ fromBlock: "earliest" })
+          .on('data', event => {
+            let voterAddress = event.returnValues.voterAddress;
+            console.log("voterAddress : " + voterAddress);
+            setCountVoters(countVoters + 1);
+          })
+          .on('changed', changed => console.log(changed))
+          .on('error', err => console.log(err))
+          .on('connected', str => console.log(str))
+      }
+
+    }
+
     getOwner();
     getPhase();
-
-  }, [accounts, contract, artifact, currentPhase, setCurrentPhase]);
+    getEvents();
+  }, [accounts, contract, artifact, currentPhase, setCurrentPhase, countVoters]);
 
   const onInputChange = (evt) => {
     setInputValue(evt.currentTarget.value);
@@ -40,51 +68,47 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
       alert("Please enter a voter address");
       // return;
     } else {
-      const newVoter = await contract.methods.addVoter(inputValue).send({ from: accounts[0] });
-      console.log(newVoter);
-      //location.reload();
-      // récupérer un event event VoterRegistered(address voterAddress);
+      try {
+        const newVoter = await contract.methods.addVoter(inputValue).send({ from: accounts[0] });
+        //Error: invalid address
+        console.log(newVoter);
+        //location.reload();
+        // récupérer un event event VoterRegistered(address voterAddress);
 
+      } catch (e) {
+        console.error(e)
+      }
     }
   };
 
   const eventChangePhase = async () => {
-    console.log(currentPhase);
+    console.log("Current phase before : " + currentPhase);
 
     switch (currentPhase) {
       case 0:
-        await contract.methods.startProposalsRegistering().send({ from: accounts[0] });
         setCurrentPhase(1);
-        console.log(currentPhase);
-        // event WorkflowStatusChange
+        await contract.methods.startProposalsRegistering().send({ from: accounts[0] });
+        console.log("Current phase after 1 : " + EventValue);
         break;
       case 1:
         await contract.methods.endProposalsRegistering().send({ from: accounts[0] });
         setCurrentPhase(2);
-        console.log(currentPhase);
-        // event WorkflowStatusChange
+        console.log("Current phase after 2 : " + EventValue);
         break;
       case 2:
         await contract.methods.startVotingSession().send({ from: accounts[0] });
         setCurrentPhase(3);
-        console.log(currentPhase);
-        // event WorkflowStatusChange
+        console.log("Current phase after 3 : " + EventValue);
         break;
       case 3:
         await contract.methods.endVotingSession().send({ from: accounts[0] });
         setCurrentPhase(4);
-        console.log(currentPhase);
-        // event WorkflowStatusChange
+        console.log("Current phase after 4: " + EventValue);
         break;
       case 4:
+        await contract.methods.tallyVotes().send({ from: accounts[0] });
         setCurrentPhase(5);
-        console.log(currentPhase);
-        // event WorkflowStatusChange
-        break;
-      case 5:
-        setCurrentPhase(0);
-        console.log(currentPhase);
-        // event WorkflowStatusChange
+        console.log("Current phase after 5 :" + EventValue);
         break;
       default:
         break;
@@ -111,8 +135,8 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
         <Grid centered columns={2}>
           <Grid.Column textAlign='center'>
             <Statistic size='mini' >
-              <Statistic.Label>Voter</Statistic.Label>
-              <Statistic.Value>0</Statistic.Value>
+              <Statistic.Label>{countVoters > 0 ? "Voters" : "Voter"}</Statistic.Label>
+              <Statistic.Value>{countVoters}</Statistic.Value>
             </Statistic>
           </Grid.Column>
         </Grid >
@@ -129,7 +153,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
                   </Step.Content>
                 </Step>
 
-                <Step completed={currentPhase > 0} >
+                <Step completed={currentPhase >= 1} >
                   <Icon name='edit' />
                   <Step.Content>
                     <Step.Title>Proposals Registration Started</Step.Title>
@@ -137,7 +161,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
                   </Step.Content>
                 </Step>
 
-                <Step completed={currentPhase > 1} >
+                <Step completed={currentPhase >= 2} >
                   <Icon name='edit outline' />
                   <Step.Content>
                     <Step.Title>Proposals Registration Ended</Step.Title>
@@ -145,7 +169,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
                   </Step.Content>
                 </Step>
 
-                <Step completed={currentPhase > 2} >
+                <Step completed={currentPhase >= 3} >
                   <Icon name='envelope open' />
                   <Step.Content>
                     <Step.Title>Voting Session Started</Step.Title>
@@ -153,7 +177,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
                   </Step.Content>
                 </Step>
 
-                <Step completed={currentPhase > 3} >
+                <Step completed={currentPhase >= 4} >
                   <Icon name='envelope outline' />
                   <Step.Content>
                     <Step.Title>Voting Session Ended</Step.Title>
@@ -161,7 +185,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
                   </Step.Content>
                 </Step>
 
-                <Step completed={currentPhase > 4} >
+                <Step completed={currentPhase >= 5} >
                   <Icon name='calculator' />
                   <Step.Content>
                     <Step.Title>Votes Tallied</Step.Title>
@@ -171,7 +195,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
               </Step.Group>
             </Grid.Column>
             <Grid.Column width={6} verticalAlign='middle'>
-              <Button positive size='huge' content='Next step' onClick={eventChangePhase} />
+              <Button positive size='huge' content='Next step' onClick={eventChangePhase} disabled={currentPhase >= 5} />
             </Grid.Column>
           </Grid>
           <Divider vertical><Icon name='angle double right' /></Divider>

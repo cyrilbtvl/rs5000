@@ -8,6 +8,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
   const [inputValue, setInputValue] = useState("");
   //const [EventValue, setEventValue] = useState("");
   const [countVoters, setCountVoters] = useState(0);
+  //const [allVoterAddress, setAllVoterAddress] = useState();
   const [open, setOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorCode, setErrorCode] = useState("");
@@ -36,17 +37,16 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
       if (contract && artifact) {
         let allVoterRegistered = await contract.getPastEvents('VoterRegistered', { fromBlock: "earliest", toBlock: "latest" });
         let allVoterRegisteredSize = allVoterRegistered.length;
-        console.log("allVoterRegistered size : " + allVoterRegistered.length);
+        console.log("OwnerPanel : allVoterRegistered size : " + allVoterRegistered.length);
         setCountVoters(allVoterRegisteredSize);
 
-        let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
-        console.log("allVoterAddress : " + allVoterAddress);
-
-
+        //let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
+        //setAllVoterAddress(allVoterAddress);
+        //console.log("allVoterAddress : " + allVoterAddress);
 
         let allWorkflowStatusChange = await contract.getPastEvents('WorkflowStatusChange', { fromBlock: "earliest", toBlock: "latest" });
         let allWorkflowStatusChangeSize = allWorkflowStatusChange.length;
-        console.log("allVoterRegistered size : " + allWorkflowStatusChangeSize.length);
+        console.log("OwnerPanel : allVoterRegistered size : " + allWorkflowStatusChangeSize.length);
 
         //let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
         //console.log("allVoterAddress : " + allVoterAddress);
@@ -54,14 +54,14 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
         await contract.events.WorkflowStatusChange({ fromBlock: "earliest" })
           .on('data', event => {
             let newStatus = event.returnValues.newStatus;
-            console.log("newStatus : " + newStatus);
+            console.log("OwnerPanel : newStatus : " + newStatus);
             setCurrentPhase(newStatus);
           })
-          .on('changed', changed => console.log(changed))
-          .on('error', err => console.log(err))
-          .on('connected', str => console.log(str))
+          .on('changed', changed => console.log("OwnerPanel :" + changed))
+          .on('error', err => console.log("OwnerPanel :" + err))
+          .on('connected', str => console.log("OwnerPanel :" + str))
 
-        console.log("currentPhase useEffect : " + currentPhase);
+        console.log("OwnerPanel : currentPhase useEffect : " + currentPhase);
       } else {
         console.log("OwnerPanel : user not connected");
       }
@@ -107,7 +107,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
   const onInputChange = (evt) => {
     let newAddressVoter = evt.currentTarget.value;
     setInputValue(newAddressVoter.trim());
-    console.log("setInputValue : " + evt.currentTarget.value);
+    console.log("OwnerPanel : setInputValue : " + evt.currentTarget.value);
   };
 
   const formSubmit = async () => {
@@ -123,7 +123,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
         //Error: invalid address
         //Catcher les erreurs avec des popup
 
-        console.log("newVoter : " + newVoter);
+        console.log("OwnerPanel : newVoter : " + newVoter);
         window.location.reload();
         // récupérer un event event VoterRegistered(address voterAddress);
 
@@ -131,28 +131,28 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
 
         setOpen(true);
         setErrorCode(e.code);
-        console.error("mon erreur : " + errorCode);
+        console.error("OwnerPanel : mon erreur : " + errorCode);
         setErrorMessage(e.message);
-        console.error("mon erreur message : " + errorMessage);
+        console.error("OwnerPanel : mon erreur message : " + errorMessage);
       }
     }
   };
 
   const eventChangePhase = async () => {
-    console.log("Current phase before : " + currentPhase);
+    console.log("OwnerPanel : Current phase before : " + currentPhase);
 
     switch (currentPhase) {
       case 0:
         await contract.methods.startProposalsRegistering().send({ from: accounts[0] });
-        setCurrentPhase(1);
+        //setCurrentPhase(1);
         break;
       case 1:
         await contract.methods.endProposalsRegistering().send({ from: accounts[0] });
-        setCurrentPhase(2);
+        //setCurrentPhase(2);
         break;
       case 2:
         await contract.methods.startVotingSession().send({ from: accounts[0] });
-        setCurrentPhase(3);
+        //setCurrentPhase(3);
         break;
       case 3:
         await contract.methods.endVotingSession().send({ from: accounts[0] });
@@ -160,7 +160,6 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
         break;
       case 4:
         await contract.methods.tallyVotes().send({ from: accounts[0] });
-        console.log("ici");
         //setCurrentPhase(5);
         break;
       default:
@@ -209,6 +208,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
             </Statistic>
           </Grid.Column>
         </Grid >
+
         <Segment>
           <Grid columns={2} relaxed='very' stackable>
             <Grid.Column width={10}>

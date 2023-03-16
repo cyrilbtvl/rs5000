@@ -28,17 +28,17 @@ function Account() {
 
     async function getVoter() {
       if (artifact) {
-        console.log("VoterPanel : user connected");
+        console.log("Account : user connected");
 
         try {
           let allVoterRegistered = await contract.getPastEvents('VoterRegistered', { fromBlock: 0, toBlock: "latest" });
           let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
           let isVoter = allVoterAddress.includes(accounts[0]);
-          console.log("isVoter ? " + isVoter);
+          console.log("Account : isVoter ? " + isVoter);
           if (isVoter) {
             setIsVoter(true);
             const voterData = await contract.methods.getVoter(accounts[0]).call({ from: accounts[0] });
-            console.log("HasVoter ? " + voterData.hasVoted);
+            console.log("Account : HasVoter ? " + voterData.hasVoted);
           } else {
             setIsVoter(false);
           }
@@ -46,7 +46,7 @@ function Account() {
           console.log(e)
         }
       } else {
-        console.log("VoterPanel : user not connected");
+        console.log("Account : user not connected");
       }
     }
 

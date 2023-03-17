@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Segment, Header, Statistic, Form, Button, Input, Step, Icon, Grid, Divider, Modal } from "semantic-ui-react";
 import { useEth } from "../../contexts/EthContext";
 
-function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
+function OwnerPanel({ isOwner, currentPhase, setCurrentPhase, setVoters }) {
   const { state: { accounts, contract, artifact }, } = useEth();
-  const [isOwner, setIsOwner] = useState(false);
+  //const [isOwner, setIsOwner] = useState(false);
   const [inputValue, setInputValue] = useState("");
   //const [EventValue, setEventValue] = useState("");
   const [countVoters, setCountVoters] = useState(0);
@@ -14,17 +14,8 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
   const [errorCode, setErrorCode] = useState("");
 
   useEffect(() => {
-    async function getOwner() {
-      if (artifact) {
-        console.log("OwnerPanel : user connected");
-        const owner = await contract.methods.owner().call({ from: accounts[0] });
-        accounts[0] === owner ? setIsOwner(true) : setIsOwner(false);
-      } else {
-        console.log("OwnerPanel : user not connected");
-      }
-    }
-
     async function getPhase() {
+      console.log("OwnerPanel : User is a Owner : " + isOwner);
       if (artifact) {
         const phase = await contract.methods.workflowStatus().call({ from: accounts[0] });
         setCurrentPhase(parseInt(phase));
@@ -36,20 +27,16 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
     async function getEvents() {
       if (contract && artifact) {
         let allVoterRegistered = await contract.getPastEvents('VoterRegistered', { fromBlock: "earliest", toBlock: "latest" });
+        console.log("OwnerPanel : allVoterRegistered : " + allVoterRegistered);
+        let allVoterAddress = allVoterRegistered.map((voter) => voter.returnValues.voterAddress);
+        setVoters(allVoterAddress);
         let allVoterRegisteredSize = allVoterRegistered.length;
         console.log("OwnerPanel : allVoterRegistered size : " + allVoterRegistered.length);
         setCountVoters(allVoterRegisteredSize);
 
-        //let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
-        //setAllVoterAddress(allVoterAddress);
-        //console.log("allVoterAddress : " + allVoterAddress);
-
         let allWorkflowStatusChange = await contract.getPastEvents('WorkflowStatusChange', { fromBlock: "earliest", toBlock: "latest" });
         let allWorkflowStatusChangeSize = allWorkflowStatusChange.length;
         console.log("OwnerPanel : allVoterRegistered size : " + allWorkflowStatusChangeSize.length);
-
-        //let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
-        //console.log("allVoterAddress : " + allVoterAddress);
 
         await contract.events.WorkflowStatusChange({ fromBlock: "earliest" })
           .on('data', event => {
@@ -66,43 +53,9 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
         console.log("OwnerPanel : user not connected");
       }
     }
-    /*async function getEvents() {
-      //      const deployTx = await web3.eth.getTransaction(txhash)
-      //      const results = await contract.getPastEvents("Transfer", { fromBlock:deployTx.blockNumber , toBlock: "latest" });
-      //      await contract.getPastEvents('VoterRegistered', { fromBlock: 0, toBlock: "latest" });
-      if (artifact) {
-        await contract.events.WorkflowStatusChange({ fromBlock: "earliest" })
-          .on('data', event => {
-            let newStatus = event.returnValues.newStatus;
-            console.log("newStatus : " + newStatus);
-            setEventValue(newStatus);
-          })
-          .on('changed', changed => console.log(changed))
-          .on('error', err => console.log(err))
-          .on('connected', str => console.log(str))
-    }*/
-    getOwner();
     getPhase();
     getEvents();
-  }, [accounts, artifact, contract, currentPhase, setCurrentPhase, countVoters]);
-  /*
-    useEffect(() => {
-      async function getEvents() {
-        if (contract && artifact) {
-          let allVoterRegistered = await contract.getPastEvents('VoterRegistered', { fromBlock: "earliest", toBlock: "latest" });
-          let allVoterRegisteredSize = allVoterRegistered.length;
-          console.log("allVoterRegistered size : " + allVoterRegistered.length);
-          setCountVoters(allVoterRegisteredSize);
-  
-          let allVoterAddress = allVoterRegistered.map(_ev => _ev.returnValues.voterAddress);
-          console.log("allVoterAddress : " + allVoterAddress);
-        }
-      }
-  
-      getEvents();
-    });
-  */
-
+  }, [accounts, artifact, contract, currentPhase, setCurrentPhase, countVoters, isOwner, setVoters]);
 
   const onInputChange = (evt) => {
     let newAddressVoter = evt.currentTarget.value;
@@ -112,20 +65,15 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
 
   const formSubmit = async () => {
     if (inputValue === "") {
-
       setErrorCode("Address format is not correct !");
       setErrorMessage("Please add a correct address.");
-      //alert("Please enter a voter address");
       setOpen(true);
     } else {
       try {
         const newVoter = await contract.methods.addVoter(inputValue).send({ from: accounts[0] });
-        //Error: invalid address
-        //Catcher les erreurs avec des popup
-
         console.log("OwnerPanel : newVoter : " + newVoter);
+
         window.location.reload();
-        // récupérer un event event VoterRegistered(address voterAddress);
 
       } catch (e) {
 
@@ -143,24 +91,64 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
 
     switch (currentPhase) {
       case 0:
-        await contract.methods.startProposalsRegistering().send({ from: accounts[0] });
-        //setCurrentPhase(1);
+        try {
+          await contract.methods.startProposalsRegistering().send({ from: accounts[0] });
+        } catch (e) {
+
+          setOpen(true);
+          setErrorCode(e.code);
+          console.error("OwnerPanel : mon erreur : " + errorCode);
+          setErrorMessage(e.message);
+          console.error("OwnerPanel : mon erreur message : " + errorMessage);
+        }
         break;
       case 1:
-        await contract.methods.endProposalsRegistering().send({ from: accounts[0] });
-        //setCurrentPhase(2);
+        try {
+          await contract.methods.endProposalsRegistering().send({ from: accounts[0] });
+        } catch (e) {
+
+          setOpen(true);
+          setErrorCode(e.code);
+          console.error("OwnerPanel : mon erreur : " + errorCode);
+          setErrorMessage(e.message);
+          console.error("OwnerPanel : mon erreur message : " + errorMessage);
+        }
         break;
       case 2:
-        await contract.methods.startVotingSession().send({ from: accounts[0] });
-        //setCurrentPhase(3);
+        try {
+          await contract.methods.startVotingSession().send({ from: accounts[0] });
+        } catch (e) {
+
+          setOpen(true);
+          setErrorCode(e.code);
+          console.error("OwnerPanel : mon erreur : " + errorCode);
+          setErrorMessage(e.message);
+          console.error("OwnerPanel : mon erreur message : " + errorMessage);
+        }
         break;
       case 3:
-        await contract.methods.endVotingSession().send({ from: accounts[0] });
-        //setCurrentPhase(4);
+        try {
+          await contract.methods.endVotingSession().send({ from: accounts[0] });
+        } catch (e) {
+
+          setOpen(true);
+          setErrorCode(e.code);
+          console.error("OwnerPanel : mon erreur : " + errorCode);
+          setErrorMessage(e.message);
+          console.error("OwnerPanel : mon erreur message : " + errorMessage);
+        }
         break;
       case 4:
-        await contract.methods.tallyVotes().send({ from: accounts[0] });
-        //setCurrentPhase(5);
+        try {
+          await contract.methods.tallyVotes().send({ from: accounts[0] });
+        } catch (e) {
+
+          setOpen(true);
+          setErrorCode(e.code);
+          console.error("OwnerPanel : mon erreur : " + errorCode);
+          setErrorMessage(e.message);
+          console.error("OwnerPanel : mon erreur message : " + errorMessage);
+        }
         break;
       default:
         break;
@@ -196,7 +184,7 @@ function OwnerPanel({ currentPhase, setCurrentPhase, phases }) {
               />
             </Form.Field>
 
-            <Button icon='add user' content='Add' color="blue" type="submit" fluid />
+            <Button icon='add user' content='Add' color="blue" type="submit" size="huge" fluid />
           </Form>
         )}
         <Divider />

@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { Message, Icon } from "semantic-ui-react";
 import { useEth } from "../../contexts/EthContext";
 
-function Account() {
+function Account({ isOwner, setIsOwner, isVoter, setIsVoter }) {
   const { state: { accounts, contract, artifact }, } = useEth(); //????
   const [account, setAccount] = useState("");
-  const [isOwner, setIsOwner] = useState(false);
-  const [isVoter, setIsVoter] = useState(false);
+  //const [isOwner, setIsOwner] = useState(false);
+  //const [isVoter, setIsVoter] = useState(false);
 
   useEffect(() => {
     async function getAccount() {
@@ -19,7 +19,14 @@ function Account() {
         console.log("Account : user connected");
         // On check si l'account courant est l'owner du contract
         const owner = await contract.methods.owner().call({ from: accounts[0] });
-        accounts[0] === owner ? setIsOwner(true) : setIsOwner(false);
+        if (accounts[0] === owner) {
+          //setIsOwner(true);
+          setIsOwner(true);
+        } else {
+          //setIsOwner(false);
+          setIsOwner(false);
+          getVoter();
+        }
       } else {
         console.log("Account : user not connected");
         //alert("pas de contract détecté");
@@ -36,14 +43,16 @@ function Account() {
           let isVoter = allVoterAddress.includes(accounts[0]);
           console.log("Account : isVoter ? " + isVoter);
           if (isVoter) {
+            //setIsVoter(true);
             setIsVoter(true);
             const voterData = await contract.methods.getVoter(accounts[0]).call({ from: accounts[0] });
             console.log("Account : HasVoter ? " + voterData.hasVoted);
           } else {
+            //setIsVoter(false);
             setIsVoter(false);
           }
         } catch (e) {
-          console.log(e)
+          console.log("Account : " + e);
         }
       } else {
         console.log("Account : user not connected");
@@ -52,9 +61,9 @@ function Account() {
 
     getAccount();
     getOwner();
-    getVoter();
+    //    getVoter();
 
-  }, [accounts, contract, artifact]);
+  }, [accounts, contract, artifact, isOwner, setIsOwner, setIsVoter]);
 
   return (
     !artifact ? (

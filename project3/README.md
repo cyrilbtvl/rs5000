@@ -7,7 +7,7 @@ Il se termine par le décompte des votes
 ## Quelques liens
 - Une vidéo de présentation du projet avec image et son et sur l'URL suivant : https://www.loom.com/share/f13d49a0a236467385699b14b169fcd5
 - Une vidéo du projet plus net sans image et son sur l'URL suivant : https://www.loom.com/share/6ae31058c16d40b99f23ab2ea3029618
-- Le lien vers un déploiement public de la DApp sur Vercel : https://rs5000-cyrilbtvl.vercel.app
+- Le lien vers un déploiement public de la DApp sur Vercel : https://rs5000-cyrilbtvl.vercel.app qui pointe sur le testnet Goerli.
 
 ## Processus de vote
 

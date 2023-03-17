@@ -6,7 +6,7 @@ Il se termine par le décompte des votes
 
 ## Quelques liens
 - Vous trouverez une vidéo de présentation du projet sur l'URL suivant : https://www.loom.com/share/f13d49a0a236467385699b14b169fcd5
-- Le lien vers un déploiement public de la DApp sur Vercel : 
+- Le lien vers un déploiement public de la DApp sur Vercel : https://rs5000-cyrilbtvl.vercel.app
 
 ## Processus de vote
 

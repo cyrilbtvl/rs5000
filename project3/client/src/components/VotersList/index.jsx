@@ -30,8 +30,6 @@ function VotersList() {
           if (isAVoter) {
             console.log("VoterList : it is a Voter");
             setIsVoter(true);
-            //const voterData = await contract.methods.getVoter(accounts[0]).call({ from: accounts[0] });
-            //console.log("HasVoter ? " + voterData.hasVoted);
           } else {
             console.log("VoterList : it is not a Voter");
             setIsVoter(false);

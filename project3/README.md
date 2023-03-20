@@ -44,7 +44,7 @@ Les instructions suivantes vous permettrons d'installer le projet pour lancer le
 ```bash
 npm clone https://github.com/cyrilbtvl/rs5000.git
 ```
-- Mettez vous dans le dossier /projet2
+- Mettez vous dans le dossier /projet3
 
 ## Démarrage
 - Lancez votre blockchain privée avec la commande : 
